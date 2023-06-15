@@ -1,0 +1,25 @@
+{
+    "name" : "sma",
+    "description" : "simple moving average",
+    "is_window_function":true,
+    "params":[
+        {
+            "name":"preceeding_number",
+            "type":"integer",
+            "value":200
+        },
+        {
+            "name":"order_by",
+            "type":"column_name",
+            "value":"trade_date desc"
+        },
+        {
+            "name":"partition_by",
+            "type":"column_name",
+            "value":"sc_code"
+        }
+
+    ]
+}
+
+function sma(preceding_number:int,)

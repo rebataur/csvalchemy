@@ -1,0 +1,163 @@
+{% extends 'rapidiamapp/base.html'%}
+{% block content %}
+
+    <!-- Button trigger modal -->
+
+
+
+
+    <h4 style="background-color: rgb(254, 234, 245);border:2px solid black;">Data Visualization</h4>
+ 
+
+
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link  {% if action == 'display' %}active{% endif %}" aria-current="page"
+                href="{% url 'rapidiamapp:dataviz' action='display' id=entity.id %}">Table</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if action == 'visualize' %}active{% endif %}"
+                href="{% url 'rapidiamapp:dataviz' action='visualize' id=entity.id %}">Visualization</a>
+        </li>
+  
+
+    </ul>
+
+    {% if action == 'display' %}
+        <!-- Filter -->
+        <label>Filter</label>
+
+            <form  class="form-inline" method="GET" action="{% url 'rapidiamapp:dataviz' action='apply_table_filter' id=entity.id %}">
+                {% for filter in filters %}
+
+                <div id="filter-form-{{filter.id}}">
+                    <select name="filter_col_{{filter.id}}">
+                        <option></option>
+                        {% for field in col_names %}
+                        <option value={{field}} {% if field == filter.filter_col %}selected{% endif %}>{{field}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="filter_op_{{filter.id}}">
+                        <option></option>
+                        <option value="exact" {% if 'exact' == filter.filter_op %}selected{% endif %}>=</option>
+
+                        <option value="not" {% if 'not' == filter.filter_op %}selected{% endif %}>!=</option>
+
+                        <option value="gt" {% if 'gt' == filter.filter_op %}selected{% endif %}>&gt;</option>
+
+                        <option value="gte" {% if 'gte' == filter.filter_op %}selected{% endif %}>≥</option>
+
+                        <option value="lt" {% if 'lt' == filter.filter_op %}selected{% endif %}>&lt;</option>
+
+                        <option value="lte" {% if 'lte' == filter.filter_op %}selected{% endif %}>≤</option>
+
+                    </select>
+
+                    <input type="text" name="filter_val_{{filter.id}}" value="{{filter.filter_val}}" />
+                    <button hx-target="#filter-form-{{filter.id}}" hx-indicator="#indicator"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-post="{% url 'rapidiamapp:dataviz' action='delete_filter' id=entity.id %}?filter_id={{filter.id}}"
+                        class="btn btn-outline-danger">X</button>
+                </div>
+                {% endfor %}
+
+
+                <div>
+                    <select name="filter_col_0">
+                        <option></option>
+                        {% for field in col_names %}
+
+                        <option> {{field}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="filter_op_0"> 
+                        <option></option>
+                        <option value="exact">=</option>
+
+                        <option value="not">!=</option>
+
+                        <option value="gt">&gt;</option>
+
+                        <option value="gte">≥</option>
+
+                        <option value="lt">&lt;</option>
+
+                        <option value="lte">≤</option>
+                    </select>
+
+                    <input type="text" name="filter_val_0" />
+
+                </div>
+
+                <button type="submit" class="btn btn-success">Apply</button>
+            </form>
+
+
+        <table class="table">
+            <thead>
+
+                <tr>
+                    {% for field in col_names %}
+                    <th>{{field}}</th>
+                    {% endfor %}
+                </tr>
+
+            </thead>
+            <tbody>
+                {% for d in data %}
+                <tr>
+                    {% for i in d %}
+                    <td>{{i}}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+
+{% if msg %}
+{{msg}}
+{% else %}
+    {% if action == 'visualize' %}
+   
+        {{eda|safe}}
+   
+    {% endif %}
+
+  {% endif %}
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+
+                    <h5 class="modal-title" id="exampleModalLabel">Modal title
+
+
+                    </h5>
+                    <div id="ds-modal-indicator" class="htmx-indicator alert alert-success" role="alert">
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/AjaxLoader.gif" />
+                    </div>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+
+                </div>
+                <div class="modal-body">
+                    <div id="ds-modal">
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

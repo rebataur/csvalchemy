@@ -1,0 +1,1 @@
+1. Field name is unique, but in CTE it should be table_name.column_name in "as" selection

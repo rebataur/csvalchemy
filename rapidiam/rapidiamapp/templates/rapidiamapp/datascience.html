@@ -1,0 +1,355 @@
+{% extends 'rapidiamapp/base.html'%}
+{% block content %}
+<style>
+    form {
+        margin-left: 1em;
+        margin-bottom: 2em;;
+    }
+
+    
+    form.tabled_form > input,
+    form.tabled_form > select,
+    form.tabled_form > textarea {
+        display: block;
+        width: 30%;
+        margin-bottom: 1em;;
+    }
+
+    form.tabled_form > div > input,
+    form.tabled_form > div > select,
+    form.tabled_form > div > textarea {
+        display: block;
+        width: 30%;
+        margin-bottom: 1em;;
+    }
+    #function_code_editor {
+        /* position: absolute; */
+        /* top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0; */
+
+        height: 1000px;
+        width: 100%;
+    }
+    #return_sql_editor {
+        /* position: absolute; */
+        /* top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0; */
+
+        height: 50px;
+        width: 100%;
+    }
+</style>
+<style>
+.dataframe table {
+    border-collapse: collapse;
+    width: 30%;
+  }
+  
+  .dataframe th, .dataframe td {
+    padding: 6px;
+    font-family: Helvetica, Arial, Helvetica;
+    font-size: 12px;
+  }
+  
+  
+  .dataframe .header {
+    color: white;
+    background-color: black;
+    border-bottom:1pt solid black;
+  }
+  
+  .text_column {
+    text-align: left;
+  }
+  
+  .number_column {
+    text-align: right;
+  }
+  
+  .even_row {
+    background-color: #f2f2f2;
+  }
+  .dataframe td:last-child { background-color : lime }
+  </style>
+
+    <!-- Button trigger modal --> 
+
+    <h4 style="background-color: rgb(238, 234, 254);border:2px solid black;">Data Science</h4>  
+     
+        <div class="row">
+        <div class="col-12">
+            <!-- <h4><a href="{% url 'rapidiamapp:fieldfunction' action='createderived' id=0 %}">Wrangling/Enrichment[+]</a> -->
+            <a href="{% url 'rapidiamapp:fieldfunction' action='createdatascience' id=0 %}">DataScience[+]</a>
+        </h4>
+       
+     
+        {% for ds_field in ds_fields %}
+        <div style="margin-left:1em;">
+        
+                <a href=""
+                 hx-trigger="click" 
+                 hx-target="#edit_params_{{field_functions.id}}"
+                 hx-indicator="#indicator" 
+                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                 hx-post="{% url 'rapidiamapp:datascience' action='get_function_params_with_values' id=entity.id %}?ds_field_id={{ds_field.id}}">
+                 {{ds_field}}</a>
+                 <a href="{% url 'rapidiamapp:fieldfunction' action='edit' id=ds_field.function.id %}">[>]</a>
+                <div style="margin-left:2em;" id="edit_params_{{field_functions.id}}"></div>
+            
+
+        
+        </div>
+
+
+
+        
+        {% endfor %}
+
+    <form class="tabled_form" hx-indicator="#indicator" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            hx-post="{% url 'rapidiamapp:datascience' action='add_derived_field' id=entity.id %}">
+
+            <select hx-indicator="#indicator" hx-trigger="change" name="function_id"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-post="{% url 'rapidiamapp:datascience' action='get_function_params' id=entity.id %}"
+                hx-target="#function-form">
+                <option></option>
+                {% for function in available_functions %}
+
+                <option value="{{function.id}}">{{function.name}}</option>
+                {% endfor %}
+
+
+            </select>
+            <div id="function-form"></div>
+            <!-- <a href="{% url 'rapidiamapp:datascience' action='add_derived_column' id=entity.id %}">Add Derived Fields</a> -->
+            <button  class="btn btn-outline-success" type="submit">Add</button>
+        </form>
+ 
+        </div>
+      
+
+
+    <!-- Tabs -->
+
+   
+
+        <!-- Filter -->
+        <label> <h3>Filters</h3></label>
+           
+            <form  class="form-inline" method="GET" action="{% url 'rapidiamapp:datascience' action='apply_table_filter' id=entity.id %}">
+                {% for filter in filters %}
+                
+                <div id="filter-form-{{filter.id}}">
+                    <select name="filter_col_{{filter.id}}">
+                        <option></option>
+                        {% for field in col_names %}
+                        <option value={{field}} {% if field == filter.filter_col %}selected{% endif %}>{{field}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="filter_op_{{filter.id}}">
+                        <option></option>
+                        <option value="exact" {% if 'exact' == filter.filter_op %}selected{% endif %}>=</option>
+
+                        <option value="not" {% if 'not' == filter.filter_op %}selected{% endif %}>!=</option>
+
+                        <option value="gt" {% if 'gt' == filter.filter_op %}selected{% endif %}>&gt;</option>
+
+                        <option value="gte" {% if 'gte' == filter.filter_op %}selected{% endif %}>≥</option>
+
+                        <option value="lt" {% if 'lt' == filter.filter_op %}selected{% endif %}>&lt;</option>
+
+                        <option value="lte" {% if 'lte' == filter.filter_op %}selected{% endif %}>≤</option>
+
+
+
+                    </select>
+
+                    <input type="text" name="filter_val_{{filter.id}}" value="{{filter.filter_val}}" />
+                    <button  class="btn btn-outline-success"  hx-target="#filter-form-{{filter.id}}" hx-indicator="#indicator"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-post="{% url 'rapidiamapp:datascience' action='delete_filter' id=entity.id %}?filter_id={{filter.id}}"
+                        class="btn btn-outline-danger">X</button>
+                </div>
+                {% endfor %}
+
+
+                <div>
+                    <select name="filter_col_0">
+                        <option></option>
+                        {% for field in col_names %}
+
+                        <option> {{field}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="filter_op_0">
+                        <option></option>
+                        <option value="exact">=</option>
+
+                        <option value="not">!=</option>
+
+
+                        <option value="gt">&gt;</option>
+
+                        <option value="gte">≥</option>
+
+                        <option value="lt">&lt;</option>
+
+                        <option value="lte">≤</option>
+
+
+                    </select>
+
+                    <input type="text" name="filter_val_0" />
+
+                </div>
+
+                <button type="submit" class="btn btn-outline-success">Apply/Refresh</button>
+            </form>
+
+{% if msg %}
+{{msg}}
+{% else %}
+
+     {% for ds_field in ds_fields %}
+        <div style="margin-left:1em;">
+        
+                <a class="btn btn-outline-success"
+                 hx-trigger="click" 
+                 hx-target="#datascience-result"
+                 hx-indicator="#indicator" 
+                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                 hx-post="{% url 'rapidiamapp:datascience' action='execute_datascience_function' id=entity.id %}?ds_field_id={{ds_field.id}}">
+                Execute >> {{ds_field.function}}</a>
+               
+
+        
+        </div>
+
+
+
+        
+        {% endfor %}
+        <div id="datascience-result">
+            <table class="table">
+                <thead>
+    
+                    <tr>
+                        {% for field in col_names %}
+                        <th>{{field}}</th>
+                        {% endfor %}
+                    </tr>
+    
+                </thead>
+                <tbody>
+                    {% for d in data %}
+                    <tr>
+                        {% for i in d %}
+                        <td>{{i}}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+           
+        </div>
+   
+{% endif %}
+
+  
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+
+                    <h5 class="modal-title" id="exampleModalLabel">Modal title
+
+
+                    </h5>
+                    <div id="ds-modal-indicator" class="htmx-indicator alert alert-success" role="alert">
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/AjaxLoader.gif" />
+                    </div>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+
+                </div>
+                <div class="modal-body">
+                    <div id="ds-modal">
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+
+<!-- <select name="filter_op_{{filter.id}}">
+    <option></option>
+    <option value="exact" {% if 'exact' == filter.filter_op %}selected{% endif %}>=</option>
+
+    <option value="not" {% if 'not' == filter.filter_op %}selected{% endif %}>!=</option>
+
+    <option value="contains" {% if 'contains' == filter.filter_op %}selected{% endif %}>contains
+    </option>
+
+    <option value="endswith" {% if 'endswith' == filter.filter_op %}selected{% endif %}>ends with
+    </option>
+
+    <option value="startswith" {% if 'startswith' == filter.filter_op %}selected{% endif %}>starts
+        with
+    </option>
+
+    <option value="gt" {% if 'gt' == filter.filter_op %}selected{% endif %}>&gt;</option>
+
+    <option value="gte" {% if 'gte' == filter.filter_op %}selected{% endif %}>≥</option>
+
+    <option value="lt" {% if 'lt' == filter.filter_op %}selected{% endif %}>&lt;</option>
+
+    <option value="lte" {% if 'lte' == filter.filter_op %}selected{% endif %}>≤</option>
+
+    <option value="like" {% if 'like' == filter.filter_op %}selected{% endif %}>like</option>
+
+    <option value="notlike" {% if 'notlike' == filter.filter_op %}selected{% endif %}>not like
+    </option>
+
+    <option value="glob" {% if 'glob' == filter.filter_op %}selected{% endif %}>glob</option>
+
+    <option value="in" {% if 'in' == filter.filter_op %}selected{% endif %}>in</option>
+
+    <option value="notin" {% if 'notin' == filter.filter_op %}selected{% endif %}>not in</option>
+
+    <option value="arraycontains" {% if 'arraycontains' == filter.filter_op %}selected{% endif %}>
+        array contains
+    </option>
+
+    <option value="arraynotcontains" {% if 'arraynotcontains' == filter.filter_op %}selected{% endif %}>array does not contain</option>
+
+    <option value="date" {% if 'date' == filter.filter_op %}selected{% endif %}>date</option>
+
+    <option value="isnull" {% if 'isnull' == filter.filter_op %}selected{% endif %}>is null</option>
+
+    <option value="notnull" {% if 'notnull' == filter.filter_op %}selected{% endif %}>is not null
+    </option>
+
+    <option value="isblank" {% if 'isblank' == filter.filter_op %}selected{% endif %}>is blank
+    </option>
+
+    <option value="notblank" {% if 'notblank' == filter.filter_op %}selected{% endif %}>is not blank
+    </option>
+
+</select> -->

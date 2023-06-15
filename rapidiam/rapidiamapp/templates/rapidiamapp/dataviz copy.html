@@ -1,0 +1,332 @@
+{% extends 'rapidiamapp/base.html'%}
+{% block content %}
+
+<body>
+
+    <!-- Button trigger modal -->
+
+
+
+    <a href="{% url 'rapidiamapp:index' %}">Go back</a>
+
+    <h2>Data Prep</h2>
+ 
+
+    <div>
+
+        <div>
+
+            {% for field_functions in fields %}
+            <em>L- {{field_functions.derived_level}} {{field_functions}}</em>
+            <form hx-indicator="#indicator" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-post="{% url 'rapidiamapp:dataviz' action='add_derived_field' id=entity.id %}">
+
+                <span class="">Level {{field_functions.derived_level}}</span>
+                <input type="number" hidden name="level_field" value="{{field_functions.derived_level}}" />
+              
+                <select hx-indicator="#indicator" hx-trigger="change" name="function_id"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-post="{% url 'rapidiamapp:dataviz' action='get_function_params' id=entity.id %}"
+                    hx-target="#function-form-{{field_functions.derived_level}}">
+                    <option></option>
+
+                    {% for function in available_functions %}
+                    <option value="{{function.id}}">{{function.name}}</option>
+                    {% endfor %}
+
+
+                </select>
+                <div id="function-form-{{field_functions.derived_level}}"></div>
+                <!-- <a href="{% url 'rapidiamapp:dataviz' action='add_derived_column' id=entity.id %}">Add Derived Fields</a> -->
+                <button type="submit">Add</button>
+            </form>
+            {% endfor %}
+        </div>
+
+        <form hx-indicator="#indicator" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            hx-post="{% url 'rapidiamapp:dataviz' action='add_derived_field' id=entity.id %}">
+
+            <span class="">Level {{level_field}}</span>
+            <input type="number" hidden name="level_field" value="{{level_field}}" />
+            <select hx-indicator="#indicator" hx-trigger="change" name="function_id"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-post="{% url 'rapidiamapp:dataviz' action='get_function_params' id=entity.id %}"
+                hx-target="#function-form">
+                <option></option>
+                {% for function in available_functions %}
+
+                <option value="{{function.id}}">{{function.name}}</option>
+                {% endfor %}
+
+
+            </select>
+            <div id="function-form"></div>
+            <!-- <a href="{% url 'rapidiamapp:dataviz' action='add_derived_column' id=entity.id %}">Add Derived Fields</a> -->
+            <button type="submit">Add</button>
+        </form>
+    </div>
+
+
+
+
+
+
+    <!-- Visualize -->
+    <!-- <div>
+        <form hx-indicator="#indicator" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            hx-post="{% url 'rapidiamapp:dataviz' action='visualize' id=entity.id %}">
+
+            <span class="">Visualize</span>
+            <input type="number" hidden name="level_field" value="{{level_field}}" />
+            <select hx-indicator="#indicator" hx-trigger="change" name="function_id"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-post="{% url 'rapidiamapp:dataviz' action='get_visual_params' id=entity.id %}"
+                hx-target="#function-form">
+                <option></option>
+                {% for function in functions_viz_meta %}
+               
+                <option value="{{function.id}}">{{function.name}}</option>
+                {% endfor %}
+
+
+            </select>
+            <div id="function-form"></div>
+            <a href="{% url 'rapidiamapp:dataviz' action='add_derived_column' id=entity.id %}">Add Derived Fields</a> 
+            <button type="submit">Add</button>
+        </form>
+    </div> -->
+
+
+    <!-- Tabs -->
+
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link  {% if action == 'display' %}active{% endif %}" aria-current="page"
+                href="{% url 'rapidiamapp:dataviz' action='display' id=entity.id %}">Table</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if action == 'visualize' %}active{% endif %}"
+                href="{% url 'rapidiamapp:dataviz' action='visualize' id=entity.id %}">Visualization</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if action == 'alert' %}active{% endif %}"
+                href="{% url 'rapidiamapp:dataviz' action='alert' id=entity.id %}">Alerts</a>
+        </li>
+
+    </ul>
+
+    {% if action == 'display' %}
+    <div class="col-6">
+        <!-- Filter -->
+        <label>Filter</label>
+        <div>
+
+            <form method="GET" action="{% url 'rapidiamapp:dataviz' action='apply_table_filter' id=entity.id %}">
+                {% for filter in filters %}
+
+                <div id="filter-form-{{filter.id}}">
+                    <select name="filter_col_{{filter.id}}">
+                        <option></option>
+                        {% for field in col_names %}
+                        <option value={{field}} {% if field == filter.filter_col %}selected{% endif %}>{{field}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="filter_op_{{filter.id}}">
+                        <option></option>
+                        <option value="exact" {% if 'exact' == filter.filter_op %}selected{% endif %}>=</option>
+
+                        <option value="not" {% if 'not' == filter.filter_op %}selected{% endif %}>!=</option>
+
+                        <option value="contains" {% if 'contains' == filter.filter_op %}selected{% endif %}>contains
+                        </option>
+
+                        <option value="endswith" {% if 'endswith' == filter.filter_op %}selected{% endif %}>ends with
+                        </option>
+
+                        <option value="startswith" {% if 'startswith' == filter.filter_op %}selected{% endif %}>starts
+                            with
+                        </option>
+
+                        <option value="gt" {% if 'gt' == filter.filter_op %}selected{% endif %}>&gt;</option>
+
+                        <option value="gte" {% if 'gte' == filter.filter_op %}selected{% endif %}>≥</option>
+
+                        <option value="lt" {% if 'lt' == filter.filter_op %}selected{% endif %}>&lt;</option>
+
+                        <option value="lte" {% if 'lte' == filter.filter_op %}selected{% endif %}>≤</option>
+
+                        <option value="like" {% if 'like' == filter.filter_op %}selected{% endif %}>like</option>
+
+                        <option value="notlike" {% if 'notlike' == filter.filter_op %}selected{% endif %}>not like
+                        </option>
+
+                        <option value="glob" {% if 'glob' == filter.filter_op %}selected{% endif %}>glob</option>
+
+                        <option value="in" {% if 'in' == filter.filter_op %}selected{% endif %}>in</option>
+
+                        <option value="notin" {% if 'notin' == filter.filter_op %}selected{% endif %}>not in</option>
+
+                        <option value="arraycontains" {% if 'arraycontains' == filter.filter_op %}selected{% endif %}>
+                            array contains
+                        </option>
+
+                        <option value="arraynotcontains" {% if 'arraynotcontains' == filter.filter_op %}selected{% endif %}>array does not contain</option>
+
+                        <option value="date" {% if 'date' == filter.filter_op %}selected{% endif %}>date</option>
+
+                        <option value="isnull" {% if 'isnull' == filter.filter_op %}selected{% endif %}>is null</option>
+
+                        <option value="notnull" {% if 'notnull' == filter.filter_op %}selected{% endif %}>is not null
+                        </option>
+
+                        <option value="isblank" {% if 'isblank' == filter.filter_op %}selected{% endif %}>is blank
+                        </option>
+
+                        <option value="notblank" {% if 'notblank' == filter.filter_op %}selected{% endif %}>is not blank
+                        </option>
+
+                    </select>
+
+                    <input type="text" name="filter_val_{{filter.id}}" value="{{filter.filter_val}}" />
+                    <button hx-target="#filter-form-{{filter.id}}" hx-indicator="#indicator"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-post="{% url 'rapidiamapp:dataviz' action='delete_filter' id=entity.id %}?filter_id={{filter.id}}"
+                        class="btn btn-outline-danger">X</button>
+                </div>
+                {% endfor %}
+
+
+                <div>
+                    <select name="filter_col_0">
+                        <option></option>
+                        {% for field in col_names %}
+
+                        <option> {{field}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="filter_op_0">
+                        <option></option>
+                        <option value="exact">=</option>
+
+                        <option value="not">!=</option>
+
+                        <option value="contains">contains</option>
+
+                        <option value="endswith">ends with</option>
+
+                        <option value="startswith">starts with</option>
+
+                        <option value="gt">&gt;</option>
+
+                        <option value="gte">≥</option>
+
+                        <option value="lt">&lt;</option>
+
+                        <option value="lte">≤</option>
+
+                        <option value="like">like</option>
+
+                        <option value="notlike">not like</option>
+
+                        <option value="glob">glob</option>
+
+                        <option value="in">in</option>
+
+                        <option value="notin">not in</option>
+
+                        <option value="arraycontains">array contains</option>
+
+                        <option value="arraynotcontains">array does not contain</option>
+
+                        <option value="date">date</option>
+
+                        <option value="isnull">is null</option>
+
+                        <option value="notnull">is not null</option>
+
+                        <option value="isblank">is blank</option>
+
+                        <option value="notblank">is not blank</option>
+
+                    </select>
+
+                    <input type="text" name="filter_val_0" />
+
+                </div>
+
+                <button type="submit" class="btn btn-success">Apply</button>
+            </form>
+
+        </div>
+
+        <table class="table">
+            <thead>
+
+                <tr>
+                    {% for field in col_names %}
+                    <th>{{field}}</th>
+                    {% endfor %}
+                </tr>
+
+            </thead>
+            <tbody>
+                {% for d in data %}
+                <tr>
+                    {% for i in d %}
+                    <td>{{i}}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if action == 'visualize' %}
+    <div class="col-12">
+
+        {{eda|safe}}
+    </div>
+    {% endif %}
+
+    {% if action == 'alert' %}
+    <div class="col-6">
+        Alert
+    </div>
+    {% endif %}
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+
+                    <h5 class="modal-title" id="exampleModalLabel">Modal title
+
+
+                    </h5>
+                    <div id="ds-modal-indicator" class="htmx-indicator alert alert-success" role="alert">
+                        <img src="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/AjaxLoader.gif" />
+                    </div>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+
+                </div>
+                <div class="modal-body">
+                    <div id="ds-modal">
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+{% endblock %}

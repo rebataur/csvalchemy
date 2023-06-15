@@ -1,0 +1,1 @@
+..\pgstart.bat && python manage.py runserver

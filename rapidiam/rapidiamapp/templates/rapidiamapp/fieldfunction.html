@@ -1,0 +1,236 @@
+{% extends 'rapidiamapp/base.html'%}
+{% block content %}
+<link rel="stylesheet" href="/path/to/styles/default.min.css">
+<script src="/path/to/highlight.min.js"></script>
+
+
+<style>
+    form {
+        margin-left: 1em;
+        margin-bottom: 2em;;
+    }
+
+    label {}
+
+    input,
+    select,
+    textarea {
+        display: block;
+        width: 30%;
+        margin-bottom: 1em;;
+    }
+
+    #function_code_editor {
+        /* position: absolute; */
+        /* top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0; */
+
+        height: 1000px;
+        width: 100%;
+    }
+    #return_sql_editor,#test_code_editor {
+        /* position: absolute; */
+        /* top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0; */
+
+        height: 100px;
+        width: 100%;
+    }
+    li.error{
+        color:red;
+    }
+
+</style>
+
+
+{% if action == 'display'  %}
+<h4>Import Function as JSON</h4>
+    <form action="{% url 'rapidiamapp:fieldfunction' action='uploadfunctiondata' id=0%}" method="POST" class="post-form"
+        enctype="multipart/form-data">
+        
+        {%csrf_token%}
+        {{upload_function_form}}
+        <input type="submit" />
+    </form>
+   <h4>Existing Functions</h4>
+    <table class="table">
+    {% for function in function_all %}
+    <tr>
+        <td>{{function.name}}</td>
+        <td>{{function.type}}</td>
+        <td>{{function.return_type}}</td>
+        <td><a href="{% url 'rapidiamapp:fieldfunction' action='edit' id=function.id %}">Edit</a></td>
+        <td><a href="{% url 'rapidiamapp:fieldfunction' action='export' id=function.id %}">Export</a></td>
+    </tr>        
+    {% endfor %}
+</table>
+
+
+{% elif action == 'createderived' or action == 'createcalculated' or action == 'createdatascience' %}
+<h4>
+    {% if action == 'createderived' %}
+        Create Derived Function
+    {% elif action == 'createcalculated' %}
+        Create Calculated Function
+    {% elif action == 'createdatascience' %}
+        Create DataScience Function
+    {% endif %}
+</h4>
+<form method="POST" action="{% url 'rapidiamapp:fieldfunction' action=action id=0 %}" onsubmit="onFormSubmit();">
+{% csrf_token %}
+<label>Name</label>
+<input type="text" name="name"/>
+
+<input class="btn btn-success" type="submit"/>
+</form>
+{% else %}
+<form method="POST" action="{% url 'rapidiamapp:fieldfunction' action='edit' id=function.id %}" onsubmit="onFormSubmit();">
+{% csrf_token %}
+    <!-- <input class="btn btn-success float-end" type="submit" value="save"/>
+  
+    <input class="btn btn-success float-end" type="submit" value="delete"/> -->
+    <button class="btn btn-outline-danger float-end" type="submit" name="submit_action_delete" value="Delete">X</button>
+    <input class="btn btn-success float-end" type="submit" name="submit_action_edit" value="Edit"/>
+    
+    
+    <button class="btn btn-outline-success float-end" type="submit" name="submit_action_delete" value="Delete">Export</button>
+    
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+              <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+        <label>Name</label>
+        <input type="text" value="{{function.name}}" name="name"/>
+        
+        <h4>Existing Parameters <a href=""><small>Refresh</small></a></h4>      
+       
+  
+        <div style="margin-left:1em;">
+        <label>Parameter Name</label>
+        <select id="param_name" name="param_name" onchange="parameterChange(this);">
+            <option></option>
+            {% for args in args_meta %}        
+            <option data-id={{args.id}} {% if args.name == '{{args.name}}' %}selected{%endif%} value="{{args.type}}">{{args.name}}</option>
+            {% endfor %}
+            <option value="new_parameter">New Parameter</option>
+        </select>
+        <div id="new-parameter-placeholder">
+        
+        </div>
+        <label>Paramter Type</label>
+        <select id="param_type" name="param_type" hx-indicator="#indicator" hx-trigger="change" hx-swap="none" name=""
+        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+        hx-post="{% url 'rapidiamapp:fieldfunction' action='change_param_datatype' id=function.id %}">
+            <option></option>
+            <option value="TEXT">Text</option>
+            <option value="INTEGER">Integer</option>
+            <option value="NUMERIC">Numeric</option>
+            <option value="DATE">Date</option>
+            <option value="PNG_IMAGE">Image</option>
+            <option value="BINARY">Binary</option>
+            <option value="COLUMN">Column</option>
+            <option value="DELETE">Delete Field</option>
+            
+        </select>
+    </div>
+    
+      
+
+
+
+        <label>Return Type</label>
+        <select name="return_type">
+            <option></option>
+            <option {% if function.return_type == 'TEXT' %}selected{%endif%} value="TEXT">Text</option>
+            <option {% if function.return_type == 'INTEGER' %}selected{%endif%}  value="INTEGER">Integer</option>
+            <option {% if function.return_type == 'NUMERIC' %}selected{%endif%}  value="NUMERIC">Numeric</option>
+            <option {% if function.return_type == 'DATE' %}selected{%endif%}  value="DATE">Date</option>
+            <option {% if function.return_type == 'PNG_IMAGE' %}selected{%endif%}  value="PNG_IMAGE">Image</option>
+            <option {% if function.return_type == 'BINARY' %}selected{%endif%}  value="BINARY">Binary</option>
+        </select>
+
+
+        <label>Return SQL</label>
+        
+        <div id="return_sql_editor">{{function.return_sql}}</div>
+        <label>Test Editor</label>
+        <button class="btn btn-outline-success" type="submit" name="submit_action_test" >Test</button>
+        <div id="test_result">
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div id="test_code_editor">{{function.test_code}}</div>
+        <label>Function Code</label>
+        <div id="function_code_editor">{{function.function_code}}</div>
+       <input type="hidden" value="CALCULATED"/>
+       <input id="function_code" name="function_code" type="hidden" value=""/>
+       <input id="test_code" name="test_code" type="hidden" value=""/>
+       <input id="return_sql" name="return_sql" type="hidden" value=""/>
+</form>
+{% endif %}    
+<script src="https://ace.c9.io/build/src/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("function_code_editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/python");
+
+    var sqleditor = ace.edit("return_sql_editor");
+    sqleditor.setTheme("ace/theme/monokai");
+    sqleditor.session.setMode("ace/mode/sql");
+
+    var testeditor = ace.edit("test_code_editor");
+    testeditor.setTheme("ace/theme/monokai");
+    testeditor.session.setMode("ace/mode/sql");
+
+    document.getElementById('function_code_editor').style.fontSize='1em';
+    document.getElementById('return_sql_editor').style.fontSize='1em';
+    document.getElementById('test_code_editor').style.fontSize='1em';
+</script>
+<script>
+    // editor.setValue("the new text here");
+    // editor.setValue("def hello():\n\treturn 'hello world'", -1); // set value and move cursor to the start of the text
+    // editor.session.setValue("the new text here"); // set value and reset undo history
+    let val = editor.getValue(); // or session.getValue
+    // console.log(val);
+
+</script>
+<!-- <script>hljs.highlightAll();</script> -->
+<script>
+
+function onFormSubmit(event){
+    let val = editor.getValue(); // or session.getValue
+    document.getElementById("function_code").value = val;
+    let val1 = sqleditor.getValue();
+    document.getElementById("return_sql").value = val1;
+    let val2 = testeditor.getValue();
+    document.getElementById("test_code").value = val2;
+    return true;
+}
+
+function parameterChange(sel){
+    let param_name = sel.options[sel.selectedIndex].text;
+    console.log(param_name);
+    if(param_name === 'New Parameter'){
+        document.getElementById('new-parameter-placeholder').innerHTML =  '<label>New Parameter Name</label><input type="text" name="new_parameter_name"/><input type="hidden" name="new_parameter_field_id" value="{{id}}"/>';
+        
+    }
+  
+    let param_val = document.getElementById('param_name').value;
+    document.getElementById('param_type').value = param_val;
+    let data_id = sel.options[sel.selectedIndex].getAttribute('data-id');
+    document.getElementById('param_type').name = "param-name-id-" + data_id;
+}   
+</script>
+{% endblock %}

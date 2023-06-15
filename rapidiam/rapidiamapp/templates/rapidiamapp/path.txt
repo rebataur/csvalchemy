@@ -1,0 +1,14 @@
+set PATH=%PATH%;C:\Users\pranjan24\Downloads\python3.9
+set PATH=%PATH%;C:\Users\pranjan24\Downloads\python3.9\Scripts\
+
+set PYTHONHOME=C:\Users\pranjan24\Downloads\python3.9
+set PATH=%PYTHONHOME%;
+set PATH=%PATH%;C:\Users\pranjan24\Downloads\python3.9\Scripts\
+
+set PYTHONHOME=C:\Users\pranjan24\Downloads\python3.9
+set PATH=%PYTHONHOME%;%PATH%;
+set PATH=%PYTHONHOME%\Scripts;%PATH%;
+
+set PATH=%JAVA_HOME%\bin;%PATH%;
+
+C:\Users\pranjan24\AppData\Local\Programs\Python\Python39\Scripts\;C:\Users\pranjan24\AppData\Local\Programs\Python\Python39\;C:\Users\pranjan24\AppData\Local\Programs\Python\Python311\Scripts\;C:\Users\pranjan24\AppData\Local\Programs\Python\Python311\;C:\Users\pranjan24\AppData\Local\Mu\bin;C:\Users\pranjan24\.cargo\bin;C:\Users\pranjan24\AppData\Local\Microsoft\WindowsApps;C:\Users\pranjan24\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\pranjan24\go\bin;C:\Program Files\kind.exe;C:\Users\pranjan24\Downloads\apache-maven\bin;C:\Program Files (x86)\Nmap;C:\Program Files\CMake\bin;C:\Users\pranjan24\AppData\Local\Microsoft\WindowsApps;C:\Users\pranjan24\AppData\Local\Yarn\bin;C:\Program Files\skaffold.exe;C:\Users\pranjan24\AppD;C:\Program Files\AdoptOpenJDK\jdk-17.0.2\bin;C:\Program Files\Multipass\bin

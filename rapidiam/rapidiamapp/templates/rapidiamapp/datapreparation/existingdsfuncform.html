@@ -1,0 +1,26 @@
+<button onclick="$(this).parent().children().hide();" class="btn btn-outline-danger">X</button>
+  <form class="tabled_form"
+  hx-post="{% url 'rapidiamapp:datascience' action='get_function_params_with_value_update' id=entity.id %}?ds_field_id={{field.id}}">
+  {% csrf_token %}
+  {% for arg in derived_field %}
+ 
+
+    <input type="int" name="derived_field_arguments" value={{arg.id}} hidden/>
+    <label>{{arg.argument_name}}</label>
+
+    {% if arg.argument_type == 'COLUMN' %}
+            <select name={{arg.argument_name}}>
+            {% for entity_col in entity_columns_names %}
+                <option {% if arg.argument_value == entity_col %}selected{% endif %} value="{{entity_col}}">{{entity_col}}</option>'
+            {% endfor %}
+            </select>
+    {% else %}
+        <input type="{{arg.argument_type}}" name="{{arg.argument_name}}" value="{{arg.argument_value}}"/>
+    {% endif %}
+   
+    {% endfor %}
+    <input type="submit" name="submit_action_train" value="Train"/>
+    <input type="submit" name="submit_action_edit" value="Edit"/>
+    <input type="submit" name="submit_action_delete" value="Delete"/>
+</form>
+

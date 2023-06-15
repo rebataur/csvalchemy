@@ -1,0 +1,145 @@
+{% extends 'rapidiamapp/base.html'%}
+{% block content %}
+    <style>
+            li.error{
+        color:red;
+    }
+    </style>
+    <!-- <img  src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/ajax-loader.gif"/> -->
+
+    <h4 style="background-color: rgb(235, 250, 222);border:2px solid black;">Data Ingestion</h4>
+    <h4>Create Data Entites with Computed Columns </h4>
+   
+   
+   
+    {% if not entity %}
+    <form action="{% url 'rapidiamapp:dataingestion' action='create' id=0%}" method="POST" class="post-form"
+        enctype="multipart/form-data">
+        {%csrf_token%}
+        {{form}}
+        <input type="submit" />
+    </form>
+    {% endif %}
+
+    {% if entity %}
+
+    <h4>{{entity}}
+        <form onsubmit="return confirm('Do you want to delete');" method="POST" action="{% url 'rapidiamapp:dataingestion' action='edit' id=entity.id %}">
+            {% csrf_token %}
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+         <button  class="btn btn-outline-danger" type="submit" name="submit_action_delete" value="Delete">X</button>
+        </form>
+        </h4>
+   
+
+    <table id="table">
+        {% for field in fields %}
+        <tr>
+            {% if field.type == 'CALCULATED' %}
+                <td><a href="{% url 'rapidiamapp:fieldfunction' action='edit' id=field.function.id %}">[C]</a>{{field}}</td>
+            {% elif field.type == 'DERIVED' %}
+                <td><a href="{% url 'rapidiamapp:fieldfunction' action='edit' id=field.function.id %}">[D]</a>{{field}}</td>
+            {% else %}
+                <td>[P]{{field}}</td>
+            {% endif %}
+            <td>
+                <select hx-indicator="#indicator" hx-trigger="change" hx-swap="none" name="{{field.name}}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-post="{% url 'rapidiamapp:edit_fieldtype' id=field.id %}">
+
+                    {% for dtype in dtypes %}
+                    <option {% if field.datatype == dtype.0 %} selected {% endif %} value={{dtype.0}}>
+                        {{dtype.1}} </option>
+                    {% endfor %}
+
+                </select>
+            </td>
+        </tr>
+        {% endfor %}
+
+       
+    </table>
+    
+   
+    <form hx-indicator="#indicator" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+    hx-post="{% url 'rapidiamapp:dataingestion' action='add_calculated_field' id=entity.id %}">
+
+    <span class="">Calculated Field<a href="{% url 'rapidiamapp:fieldfunction' action='createcalculated' id=0 %}">[+]</a></span>
+    <input type="number" hidden name="level_field" value="{{level_field}}" />
+    <select hx-indicator="#indicator" hx-trigger="change" name="function_id"
+        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+        hx-post="{% url 'rapidiamapp:datapreparation' action='get_function_params' id=entity.id %}"
+        hx-target="#function-form">
+        <option></option>
+        {% for function in functions_calculated_meta %}
+
+        <option value="{{function.id}}">{{function.name}}</option>
+        {% endfor %}
+
+
+    </select>
+    <div id="function-form"></div> <button type="submit" class="btn btn-outline-success">Add</button>
+    <!-- <a href="{% url 'rapidiamapp:datapreparation' action='add_derived_column' id=entity.id %}">Add Derived Fields</a> -->
+   
+</form>
+<tr><td><button  class="btn btn-outline-success" hx-indicator="#indicator" hx-swap="none" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+    hx-post="{% url 'rapidiamapp:dataingestion' action='create_table' id=entity.id %}">Create Table </button></td></tr>
+
+    {% endif %}
+
+    <h4>Upload Data</h4>
+    {% if entity %}
+
+
+
+    <form action="{% url 'rapidiamapp:dataingestion' action='uploaddata' id=entity.id%}" method="POST" class="post-form"
+        enctype="multipart/form-data">
+        {%csrf_token%}
+        {{dataupload_form}}
+        <input type="submit" />
+    </form>
+    {% endif %}
+
+    <h4>Children</h4>
+    {% for field in fields %}
+    {{field}}
+    {% endfor %}
+   
+
+    {% if entity %}
+
+
+   <h4>Add Child</h4>
+   <form hx-post="{% url 'rapidiamapp:dataingestion' action='add_child' id=entity.id %}">
+    {%csrf_token%}
+
+    <select name="parent_field_id">
+        <option></option>
+        {% for field in fields %}
+        <option value={{field.id}}>{{field.name}} </option>
+        {% endfor %}
+    </select>
+
+    <select hx-target="#select-field" hx-indicator="#indicator" hx-trigger="change" name="child_entity_id"
+        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+        hx-post="{% url 'rapidiamapp:dataingestion' action='add_child' id=entity.id %}">
+        <option></option>
+        {% for entity in entities_excluded %}
+        <option {% if entity.name == entity.child %} selected {% endif %} value={{entity.id}}>{{entity.name}} </option>
+        {% endfor %}
+    </select>
+
+    <select id="select-field" name="child_field_id"></select>
+    <button  class="btn btn-outline-success" type="submit">Submit</button>
+    
+</form>
+
+{% endif %}
+
+{% endblock %}
