@@ -5,7 +5,7 @@ import pandas as pd
 import pygwalker as pyg
 from io import StringIO
 import logging
-from .models import Entity, Field, DATA_TYPES, SQL_OP_TYPES, FUNCTION_TYPES,FunctionMeta, ArgumentMeta, DerivedFieldArgument, FieldFilter,DataScience,DerivedDataScienceArgument,EntityChildren
+from .models import Entity, Field, DATA_TYPES, SQL_OP_TYPES, FUNCTION_TYPES,FunctionMeta, ArgumentMeta, DerivedFieldArgument, FieldFilter,DataScience,DerivedDataScienceArgument,EntityChildren,DataAlertFieldFilter,ScheduleJob
 from django.db import connection
 from django.conf import settings
 import psycopg2
@@ -14,6 +14,8 @@ from django.contrib import messages
 import traceback
 from django.core import serializers
 import json
+
+
 logger = logging.getLogger(__name__)
 # Create your views here.
 
@@ -53,11 +55,9 @@ def dataingestion(request, action, id):
         fields = Field.objects.filter(entity__id=id)
     if "GET" == request.method:        
         functions_calculated_meta = FunctionMeta.objects.filter(type='GENERATED')
-        print(functions_calculated_meta)
         form = UploadFileForm()
         dataupload_form = UploadFileDataForm()
         entities_excluded = Entity.objects.exclude(id=id).all()
-        print(entities_excluded)
         return render(request, "rapidiamapp/dataingestion.html", context={'entities': entities,'form': form, 'entity': entity, 'entities': entities, 'fields': fields, 'dtypes': DATA_TYPES, 'dataupload_form': dataupload_form,'functions_calculated_meta':functions_calculated_meta,'entities_excluded':entities_excluded})
     # if not GET, then proceed
     if action == 'create':
@@ -153,9 +153,7 @@ def dataingestion(request, action, id):
         # add created_at and refreshed_at
         sql += "created_at TIMESTAMP default now(),refreshed_at TIMESTAMP default now())"
         # sql = f"{sql[:-1]})"
-        print(sql)
         execute_raw_query(f"drop table if exists {entity.name}")
-        print(entity.name, ' DR')
         execute_raw_query(sql)
     if action == 'uploaddata':
         try:
@@ -206,7 +204,7 @@ def dataingestion(request, action, id):
             messages.error(request, "Unable to upload file. "+repr(e))
         return HttpResponseRedirect(f'/dataingestion/display/{id}')
     if action == 'add_child':
-        print(request.POST)
+        
         if request.POST['child_entity_id'] and not request.POST['child_field_id']:
             child_entity_name = request.POST['child_entity_id']
             entity = Entity.objects.get(id=child_entity_name)
@@ -348,7 +346,7 @@ def datapreparation(request, action, id):
         return HttpResponse('deleted')
 
     if action == 'apply_filter':
-        print(request.POST)
+        
         fieldFilters = FieldFilter.objects.filter(entity=entity)
         new_filter_col = request.POST['filter_col_0']
         new_filter_op = request.POST['filter_op_0']
@@ -390,7 +388,7 @@ def datapreparation(request, action, id):
                 field.delete()
                 return HttpResponse('Deleted')
             
-            print(request.POST)
+            
             print( request.POST.getlist('derived_field_arguments'))            
             for arg_id in request.POST.getlist('derived_field_arguments'):
                 print(arg_id)
@@ -562,7 +560,7 @@ def datascience(request, action, id):
         return HttpResponse('deleted')
 
     if action == 'apply_filter':
-        print(request.POST)
+        
         fieldFilters = FieldFilter.objects.filter(entity=entity)
         new_filter_col = request.POST['filter_col_0']
         new_filter_op = request.POST['filter_op_0']
@@ -668,7 +666,7 @@ def datascience(request, action, id):
                 field.delete()
                 return HttpResponse('Deleted')
             
-            print(request.POST)
+            
             print( request.POST.getlist('derived_field_arguments'))            
             for arg_id in request.POST.getlist('derived_field_arguments'):
                 print(arg_id)
@@ -851,7 +849,7 @@ def dataviz(request, action, id):
         return HttpResponse('deleted')
 
     if action == 'apply_filter':
-        print(request.POST)
+        
         fieldFilters = FieldFilter.objects.filter(entity=entity)
         new_filter_col = request.POST['filter_col_0']
         new_filter_op = request.POST['filter_op_0']
@@ -988,7 +986,7 @@ def fieldfunction(request,action,id):
 
     
         if action == 'uploadfunctiondata':
-            print(request.POST)
+            
             fform = UploadFunctionForm(request.POST, request.FILES)  
             if fform.is_valid():  
                 file = request.FILES['function_file']
@@ -1038,7 +1036,7 @@ def fieldfunction(request,action,id):
 
             
         if action == 'change_param_datatype':
-            print(request.POST)
+            
             param_name = request.POST['param_name']
             
             if param_name == 'new_parameter':
@@ -1068,10 +1066,103 @@ def fieldfunction(request,action,id):
     
     return render(request,'rapidiamapp/fieldfunction.html', context={'entities':entities,'function_all':function_all,'function':function,'args_meta':args_meta,'action':action,'function_types':FUNCTION_TYPES,'upload_function_form':UploadFunctionForm()})
 
-def dataalerts(request,action,id):
-    entities = Entity.objects.all()
-    return render(request, 'rapidiamapp/dataalerts.html', context={'entities': entities})
 
+def dataalerts(request, action, id):
+  
+    entities = Entity.objects.all()
+    print("***********************************")
+    print(action, id)
+    print("***********************************")
+    data = {}
+    entity = Entity.objects.get(id=id)
+    if "GET" == request.method:
+      
+
+        fields = Field.objects.filter(
+            entity=entity, derived_level__gte=1).order_by('derived_level')
+        print(fields)
+
+        data_sql = generate_cte_sql(id)
+        create_meta_table(entity.name, data_sql)
+
+        full_data_sql = generate_action_sql(data_sql, id, 'alert')
+        data, col_names,msg = fetch_raw_query(full_data_sql)
+        entity_columns_meta = get_table_columns(f"{entity.name}_meta")
+
+        filters = DataAlertFieldFilter.objects.filter(entity=entity)
+
+        schedule_job = ScheduleJob.objects.filter(entity=entity).first()
+
+        if action == 'apply_table_filter':
+            print(request.GET)
+            fieldFilters = DataAlertFieldFilter.objects.filter(entity=entity)
+            new_filter_col = request.GET.get('filter_col_0')
+            new_filter_op = request.GET.get('filter_op_0')
+            new_filter_val = request.GET.get('filter_val_0')
+            print(new_filter_col, new_filter_op, new_filter_val)
+
+            field_filter_array = []
+            if new_filter_col and new_filter_op and new_filter_val:
+                field_filter_array = [{'filter_col': new_filter_col,
+                                       'filter_op': new_filter_op, 'filter_val': new_filter_val}]
+
+            for fieldFilter in fieldFilters:
+                new_filter_col = request.GET.get(
+                    f'filter_col_{fieldFilter.id}')
+                new_filter_op = request.GET.get(f'filter_op_{fieldFilter.id}')
+                new_filter_val = request.GET.get(
+                    f'filter_val_{fieldFilter.id}')
+                if new_filter_col and new_filter_op and new_filter_val:
+                    field_filter_array.append(
+                        {'filter_col': new_filter_col, 'filter_op': new_filter_op, 'filter_val': new_filter_val})
+            print(field_filter_array)
+
+            # Delete previous objects
+            if (new_filter_col and new_filter_op and new_filter_val) or field_filter_array:
+                DataAlertFieldFilter.objects.filter(entity=entity).delete()
+            
+           
+            # # create all new
+            for field_filter in field_filter_array:
+                DataAlertFieldFilter.objects.create(
+                    entity=entity, filter_col=field_filter['filter_col'], filter_op=field_filter['filter_op'], filter_val=field_filter['filter_val'])
+            return HttpResponseRedirect(f'/dataalerts/display/{entity.id}')
+        # PG Walker
+
+        return render(request, "rapidiamapp/dataalerts.html",
+                      context={'entities': entities,'entity': entity, 'fields': fields, 'data': data,
+                               'col_names': col_names, 
+                               'filters': filters,
+                               'entity_columns_meta': entity_columns_meta,
+                               'action': action,
+                               'msg':msg,
+                               'schedule_job':schedule_job,
+                               })
+
+    if action == 'delete_filter':
+        field_filter_id = request.GET.get('filter_id')
+        DataAlertFieldFilter.objects.get(id=field_filter_id).delete()
+        return HttpResponse('deleted')
+
+    if action == 'apply_schedule':
+        data_sql = generate_cte_sql(id)
+        full_data_sql = generate_action_sql(data_sql, id, 'alert')
+       
+        full_data_sql =f"with cte_json as ({full_data_sql}) select to_json(cte_json) from cte_json"
+
+        # first delete exising schedule
+        callback_url = request.POST['callback_url']
+        sched_min = request.POST['sched_min']
+      
+        sc_job = ScheduleJob.objects.filter(entity=entity).first()
+        if sc_job:            
+            sc_job.callback_url = callback_url
+            sc_job.sched_min = sched_min
+            sc_job.save()
+        else:      
+            ScheduleJob.objects.create(entity=entity,job_sql=full_data_sql,sched_min=sched_min,callback_url=callback_url,last_run= timezone.localtime(timezone.now()))
+        
+        return HttpResponseRedirect(f'/dataalerts/display/{entity.id}')
 
 
 def handle_uploaded_file(f):
@@ -1157,7 +1248,6 @@ def fetch_raw_query(sql):
 def get_level_of_fields(id):
     top_level = Field.objects.filter(entity__id=id).order_by(
         '-derived_level').values_list('derived_level')
-    print(top_level[0])
     return top_level[0][0]
 
 
@@ -1166,8 +1256,8 @@ def generate_cte_sql(id, action=None):
 
     field_level = get_level_of_fields(id) + 1
 
-    field_filter = FieldFilter.objects.filter(entity=entity)
-    entity_columns_meta = get_table_columns(f"{entity.name}_meta")
+    # field_filter = FieldFilter.objects.filter(entity=entity)
+    # entity_columns_meta = get_table_columns(f"{entity.name}_meta")
 
     data_sql = None
     for i in range(field_level):
@@ -1198,10 +1288,6 @@ def generate_cte_sql(id, action=None):
                     fields = fields + field_list
               
                     left_join += f' left join {children.child_entity.name} on {children.parent_entity}.{children.parent_field.name} = {children.child_entity}.{children.child_field.name}'
-                print(left_join)
-                print('++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-                print([list(f) for f in fields])
-                print('++++++++++++++++++++++++++++++++++++++++++++++++++++++')
                 f = [replace_clean(list(c)) for c in fields]
                 fields_sql = ",".join(f)
                 
@@ -1240,36 +1326,40 @@ def generate_cte_sql(id, action=None):
 def generate_action_sql(sql, id, action=None):
     entity = Entity.objects.get(id=id)
 
+    # this is for data alert
     field_filter = FieldFilter.objects.filter(entity=entity)
+    if action == 'alert':
+         field_filter = DataAlertFieldFilter.objects.filter(entity=entity)
+   
     entity_columns_meta = get_table_columns(f"{entity.name}_meta")
-    print(entity_columns_meta)
 
     where_list = ''
     for filter in field_filter:
         # Get type, it will determine whether to wrap in '
         col_type = None
         for col_meta in entity_columns_meta:
-            print("+_+_+_+_+_+_+_+_+_+_+_+_+_+_")
-            print(filter.filter_col, col_meta)
             if filter.filter_col == col_meta['name']:
                 col_type = col_meta['type']
 
         # Based on type identity
    
-        print(col_type)
         if col_type and col_type.lower() in ['text', 'date']:
             where_list += f" {filter.filter_col} {SQL_OP_TYPES[filter.filter_op]} '{filter.filter_val}' and "
         else:
             where_list += f" {filter.filter_col} {SQL_OP_TYPES[filter.filter_op]} {filter.filter_val} and "
+
+
+    
    
     where_list = where_list[:-4]
-    print(where_list)
 
    
-    if where_list and (action == 'display' or action  == 'visualize'):
+    if where_list and action in ['display','visualize','alert']:
         sql += f" where {where_list}"
     else:
         sql += f" limit 500 "
+
+ 
 
     return sql
 
@@ -1277,8 +1367,6 @@ def replace_clean_upload(str):
     return str.replace('.', '').replace('-', '_').replace("'", "").replace('"', '').replace(' ', '_').replace('\n', '').replace('\r', '').replace('\r\n', '')    
 
 def replace_clean(str):
-    print("******************************************")
-    print(str)
     name = str[0]
     type = str[1]
     name = name.replace('.', '').replace('-', '_').replace("'", "").replace('"', '').replace(' ', '_').replace('\n', '').replace('\r', '').replace('\r\n', '')
@@ -1306,4 +1394,83 @@ def get_table_columns(tname):
         cols.append({"name": col[0], 'type': col[1]})
     return cols
 
+import threading
+import time
 
+import schedule
+
+
+def run_continuously(interval=1):
+    """Continuously run, while executing pending jobs at each
+    elapsed time interval.
+    @return cease_continuous_run: threading. Event which can
+    be set to cease continuous run. Please note that it is
+    *intended behavior that run_continuously() does not run
+    missed jobs*. For example, if you've registered a job that
+    should run every minute and you set a continuous run
+    interval of one hour then your job won't be run 60 times
+    at each interval but only once.
+    """
+    cease_continuous_run = threading.Event()
+
+    class ScheduleThread(threading.Thread):
+        @classmethod
+        def run(cls):
+            while not cease_continuous_run.is_set():
+                schedule.run_pending()
+                time.sleep(interval)
+
+    continuous_thread = ScheduleThread()
+    continuous_thread.start()
+    return cease_continuous_run
+
+from datetime import datetime,timezone
+import requests
+import json
+from django.utils import timezone
+
+def background_job():
+    print('Hello from the background thread')
+    jobs = ScheduleJob.objects.all()
+    for job in jobs:
+        if job.last_run:
+            
+            current_date = timezone.localtime(timezone.now())
+            print(current_date,job.last_run)
+            duration = current_date - job.last_run
+            duration_in_s = duration.total_seconds() 
+            duration_in_m = duration_in_s/60
+            print("XXXXXXXXXXXXXXXXXXXXXXXXXX",duration_in_m)
+            if True or duration_in_m > job.sched_min:
+                # run the job                
+                res,cols,msg = fetch_raw_query(job.job_sql)
+
+                x = requests.post(job.callback_url, json={"payload":res})
+                print(x)
+                sc_job = ScheduleJob.objects.get(id=job.id)
+                sc_job.last_run = timezone.localtime(timezone.now())
+                sc_job.save()
+                                                     
+      
+        
+
+schedule.every().minute.do(background_job)
+
+# Start the background thread
+stop_run_continuously = run_continuously()
+
+# Do some other things...
+# time.sleep(10)
+
+# Stop the background thread
+# stop_run_continuously.set()
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def callback_url(request):
+    if request.method == 'GET':
+        return HttpResponse("hello world")
+    else:      
+        received_json_data=json.loads(request.body)
+        print(received_json_data)
+        return HttpResponse('ok')

@@ -32,5 +32,8 @@ urlpatterns = [
 
     path('fieldfunction/<str:action>/<int:id>', views.fieldfunction, name='fieldfunction'),
 
+
+    path('callback_url', views.callback_url, name='callback_url'),
+
     
 ]

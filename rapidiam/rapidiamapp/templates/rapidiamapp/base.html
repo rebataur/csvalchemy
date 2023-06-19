@@ -110,7 +110,7 @@
 
                 {% for entity in entities%}
                 <tr>
-                    <td><a href="{% url 'rapidiamapp:dataviz' action='display' id=entity.id %}">{{entity}}</a></td>
+                    <td><a href="{% url 'rapidiamapp:dataalerts' action='display' id=entity.id %}">{{entity}}</a></td>
                 </tr>
                 {% endfor %}
 

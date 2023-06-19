@@ -1,5 +1,7 @@
 from django.db import models
-from datetime import date
+from datetime import date,datetime
+from django.utils.timezone import now
+
 # Create your models here.
 DATA_TYPES = (
     ('TEXT', 'Text'),
@@ -143,3 +145,20 @@ class DerivedDataScienceArgument(models.Model):
 
     def __str__(self):
         return str(self.id) + " " + self.field.name + " -> " + self.argument_name + " " +  self.argument_type
+    
+class DataAlertFieldFilter(models.Model):
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE, null=False)
+    filter_col = models.CharField(max_length=30, null=False)
+    filter_op = models.CharField(
+        max_length=30, null=False, choices=OP_TYPES, default='EXACT')
+    filter_val = models.CharField(max_length=120, null=False)
+    
+    def __str__(self):
+        return self.entity.name + " " + self.filter_op
+    
+class ScheduleJob(models.Model):
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE, null=False)
+    job_sql = models.TextField()
+    callback_url = models.CharField(max_length=1024, null=False)
+    sched_min = models.IntegerField(default=0)
+    last_run = models.DateTimeField()
