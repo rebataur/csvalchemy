@@ -24,6 +24,7 @@ urlpatterns = [
     path('dataingestion/<str:action>/<int:id>', views.dataingestion, name='dataingestion'),
     path('datapreparation/<str:action>/<int:id>', views.datapreparation, name='datapreparation'),
     path('edit_fieldtype/<int:id>', views.edit_fieldtype, name='edit_fieldtype'),
+    path('toggle_visibility/<int:id>', views.toggle_visibility, name='toggle_visibility'),
 
     path('datascience/<str:action>/<int:id>', views.datascience, name='datascience'),
     path('dataviz/<str:action>/<int:id>', views.dataviz, name='dataviz'),

@@ -5,7 +5,6 @@
 
 
 
-
     <h4 style="background-color: rgb(254, 234, 245);border:2px solid black;">Data Alerts</h4>
  
 
@@ -94,12 +93,13 @@
     <button type="submit" class="btn btn-success">Schedule</button>
 </form>
 
-        <table class="table">
+<table id="datatable" class="table table-striped" style="width:100%">
             <thead>
 
-                <tr>
-                    {% for field in col_names %}
-                    <th>{{field}}</th>
+                <tr>                    
+                    {% for field in col_names %}                    
+                        <th>{{field}}</th>                  
+                  
                     {% endfor %}
                 </tr>
 

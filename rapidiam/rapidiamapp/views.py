@@ -62,7 +62,7 @@ def dataingestion(request, action, id):
     # if not GET, then proceed
     if action == 'create':
         try:
-            name = request.POST['name']
+            name = request.POST['name'].lower()
             csv_file = request.FILES["csv_file"]
 
             file_data = csv_file.read().decode("utf-8")
@@ -235,7 +235,14 @@ def dataingestion(request, action, id):
         return HttpResponse("done")
     return HttpResponseRedirect(reverse("rapidiamapp:dataingestion", kwargs={'action': 'display', 'id': id}))
 
-
+def toggle_visibility(request,id):
+    if "POST" == request.method:
+        print(id, request.POST)     
+        field = Field.objects.get(id=id)
+        field.visible = False if field.visible else True
+        field.save()
+        return HttpResponse("ok")
+    
 def edit_fieldtype(request, id):
     entities = Entity.objects.all()
     if "POST" == request.method:
@@ -284,6 +291,7 @@ def datapreparation(request, action, id):
 
         data_sql = generate_cte_sql(id)
         create_meta_table(entity.name, data_sql)
+        data_sql = generate_cte_sql(id,'display')
 
         full_data_sql = generate_action_sql(data_sql, id, action)
         data, col_names,msg = fetch_raw_query(full_data_sql)        
@@ -496,7 +504,9 @@ def datascience(request, action, id):
       
         # tree view of all fields level wise
         data_sql = generate_cte_sql(id)
+        
         create_meta_table(entity.name, data_sql)
+        data_sql = generate_cte_sql(id,'display')
 
         full_data_sql = generate_action_sql(data_sql, id, action)
         data, col_names,msg = fetch_raw_query(full_data_sql)        
@@ -775,8 +785,10 @@ def dataviz(request, action, id):
             entity=entity, derived_level__gte=1).order_by('derived_level')
         print(fields)
 
+        
         data_sql = generate_cte_sql(id)
         create_meta_table(entity.name, data_sql)
+        data_sql = generate_cte_sql(id,'display')
 
         full_data_sql = generate_action_sql(data_sql, id, action)
         data, col_names,msg = fetch_raw_query(full_data_sql)
@@ -1084,9 +1096,13 @@ def dataalerts(request, action, id):
 
         data_sql = generate_cte_sql(id)
         create_meta_table(entity.name, data_sql)
+        data_sql = generate_cte_sql(id,'display')
+        
 
         full_data_sql = generate_action_sql(data_sql, id, 'alert')
         data, col_names,msg = fetch_raw_query(full_data_sql)
+
+    
         entity_columns_meta = get_table_columns(f"{entity.name}_meta")
 
         filters = DataAlertFieldFilter.objects.filter(entity=entity)
@@ -1319,7 +1335,14 @@ def generate_cte_sql(id, action=None):
         
 
     # rank_sql = f"cte_3 as (select *,RANK() OVER (PARTITION BY code ORDER BY trade_date desc) AS rank from cte_2"
-    data_sql += f") select * from cte_{field_level-1}"
+    all_fields =list(Field.objects.filter(entity=entity,visible=True).values_list('name',flat=True))
+    print(all_fields)
+    all_fields = ','.join(all_fields)
+
+    if action == 'display':  
+        data_sql += f") select {all_fields} from cte_{field_level-1}"
+    else:
+        data_sql += f") select * from cte_{field_level-1}"
     return data_sql
 
 
@@ -1367,6 +1390,7 @@ def replace_clean_upload(str):
     return str.replace('.', '').replace('-', '_').replace("'", "").replace('"', '').replace(' ', '_').replace('\n', '').replace('\r', '').replace('\r\n', '')    
 
 def replace_clean(str):
+    print(str)
     name = str[0]
     type = str[1]
     name = name.replace('.', '').replace('-', '_').replace("'", "").replace('"', '').replace(' ', '_').replace('\n', '').replace('\r', '').replace('\r\n', '')
@@ -1454,10 +1478,11 @@ def background_job():
       
         
 
+
 schedule.every().minute.do(background_job)
 
 # Start the background thread
-stop_run_continuously = run_continuously()
+# stop_run_continuously = run_continuously()
 
 # Do some other things...
 # time.sleep(10)

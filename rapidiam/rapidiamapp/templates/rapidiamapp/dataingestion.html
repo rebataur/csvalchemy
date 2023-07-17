@@ -60,6 +60,14 @@
 
                 </select>
             </td>
+            <td>
+                Visible <input type="checkbox" {% if field.visible %}checked {% endif %}
+                
+                hx-indicator="#indicator" hx-trigger="change" hx-swap="none" name="{{field.name}}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-post="{% url 'rapidiamapp:toggle_visibility' id=field.id %}"
+                />
+            </td>
         </tr>
         {% endfor %}
 

@@ -86,6 +86,7 @@ class Field(models.Model):
     name = models.CharField(max_length=64,unique=True)
     # entity_field_name = models.CharField(max_length=64,unique=True)
     main = models.BooleanField(default=False)
+    visible = models.BooleanField(default=True)
     datatype = models.CharField(max_length=64, choices=DATA_TYPES, default='TEXT')
     type = models.CharField(max_length=64, choices=FIELD_TYPES, default='COLUMN')
     # child_entity_id = models.IntegerField(null=True)
@@ -93,6 +94,7 @@ class Field(models.Model):
     derived_level = models.IntegerField(default=0)
     function = models.ForeignKey(
         FunctionMeta, on_delete=models.CASCADE, null=True)
+    
     # order = models.IntegerField()
 
     def __str__(self):
