@@ -1276,12 +1276,17 @@ def generate_cte_sql(id, action=None):
     # entity_columns_meta = get_table_columns(f"{entity.name}_meta")
 
     data_sql = None
+    all_visible_fields = []
     for i in range(field_level):
         if i == 0:
             all_child_entity_fields = None
             # parent fields
             fields = Field.objects.filter(entity__id=id, derived_level=i).values_list('name','type')
             fields = list(fields)
+
+            # for visible fields
+            visible_field_list = Field.objects.filter(entity__id=id, derived_level=i,visible=True).values_list('name',flat=True)
+            all_visible_fields = list(visible_field_list)
             # for field in fields:
             #     if field.child_entity_id and field.child_field_id:
             #         all_child_entity_fields = Field.objects.filter(
@@ -1301,11 +1306,18 @@ def generate_cte_sql(id, action=None):
                     field_list = Field.objects.filter(entity__id=children.child_entity.id, derived_level=i).values_list('name','type')
                     field_list = list(field_list)
 
+                    # for visible fields
+                    visible_field_list = Field.objects.filter(entity__id=children.child_entity.id, derived_level=i,visible=True).values_list('name',flat=True)
+                    for f in visible_field_list:
+                        all_visible_fields.append(f)
+
+
                     fields = fields + field_list
               
                     left_join += f' left join {children.child_entity.name} on {children.parent_entity}.{children.parent_field.name} = {children.child_entity}.{children.child_field.name}'
                 f = [replace_clean(list(c)) for c in fields]
                 fields_sql = ",".join(f)
+                
                 
                 data_sql = f" with cte_{i} as ( select {fields_sql} from {entity.name} {left_join} "
             else:
@@ -1313,6 +1325,7 @@ def generate_cte_sql(id, action=None):
                 fields_sql = ",".join(f)
                 data_sql = f"with cte_{i} as ( select {fields_sql} from {entity.name}"
 
+           
         else:
             # All fields from level 1 are derived
             fields = Field.objects.filter(entity__id=id, derived_level=i).exclude(type = 'CALCULATION')
@@ -1330,17 +1343,19 @@ def generate_cte_sql(id, action=None):
 
                 data_sql += f'{derived_function_sql},'
 
+                all_visible_fields.append(field.name)
+
             data_sql = f'{data_sql[:-1]} from cte_{i-1}'
-
-        
-
+   
     # rank_sql = f"cte_3 as (select *,RANK() OVER (PARTITION BY code ORDER BY trade_date desc) AS rank from cte_2"
-    all_fields =list(Field.objects.filter(entity=entity,visible=True).values_list('name',flat=True))
-    print(all_fields)
-    all_fields = ','.join(all_fields)
+   
+    # Get only visible fields
+    all_visible_fields = [replace_clean_upload(f) for f in all_visible_fields]
+    all_visible_fields = ','.join(all_visible_fields)
 
+    
     if action == 'display':  
-        data_sql += f") select {all_fields} from cte_{field_level-1}"
+        data_sql += f") select {all_visible_fields} from cte_{field_level-1}"
     else:
         data_sql += f") select * from cte_{field_level-1}"
     return data_sql

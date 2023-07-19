@@ -12,11 +12,16 @@
 
 @REM SET PYTHONPATH C:\3Projects\rapidiam\venv\Scripts
 @REM SET PATH=%PATH%;PYTHONPATH
+
+
+
+
 SET CLIENT_ENCODING TO 'utf8';
-
 C:\Users\pranjan24\Downloads\postgresql-14.6-1-windows-x64-binaries\pgsql\bin\pg_ctl -D C:\Users\pranjan24\Downloads\postgresql-14.6-1-windows-x64-binaries\pgsql\data -l logfile stop
-
 C:\Users\pranjan24\Downloads\postgresql-14.6-1-windows-x64-binaries\pgsql\bin\pg_ctl -D C:\Users\pranjan24\Downloads\postgresql-14.6-1-windows-x64-binaries\pgsql\data -l logfile start
+
+
+
 
 @REM C:\Users\pranjan24\Downloads\postgresql-14.6-1-windows-x64-binaries\pgsql\bin\pg_dump -U postgres postgres > C:\3Projects\rapidiam\backup\backup.sql
 

@@ -2,3 +2,8 @@
 2. Visualizatin selection from https://datavizproject.com/, integrate holoviews
 3. Generate SQL using OpenAI https://medium.com/dataherald/how-to-langchain-sqlchain-c7342dd41614
 https://medium.com/dataherald/how-to-connect-llm-to-sql-database-with-langchain-sqlagent-48635fddaa74
+4. Prefix sql function name with rapidiam_
+5. Fix SQL function undefined behaviour
+6. Auto file import and refresh, drop on unique field combination
+7. Create call back url as well for the ingestion
+8. Create tree view for relationship in ingestion
