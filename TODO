@@ -7,3 +7,4 @@ https://medium.com/dataherald/how-to-connect-llm-to-sql-database-with-langchain-
 6. Auto file import and refresh, drop on unique field combination
 7. Create call back url as well for the ingestion
 8. Create tree view for relationship in ingestion
+9. Only one level child entity supported, multiple level child entity should be supported ( use octowork )
