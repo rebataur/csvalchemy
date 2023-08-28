@@ -20,7 +20,8 @@ from . import views
 app_name = 'rapidiamapp'
 
 urlpatterns = [
-    path('', views.index, name="index"),
+    
+    path('', views.index, name="index"),    
     path('dataingestion/<str:action>/<int:id>', views.dataingestion, name='dataingestion'),
     path('datapreparation/<str:action>/<int:id>', views.datapreparation, name='datapreparation'),
     path('edit_fieldtype/<int:id>', views.edit_fieldtype, name='edit_fieldtype'),

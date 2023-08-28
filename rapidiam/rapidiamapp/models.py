@@ -45,15 +45,26 @@ EXECUTION_MODE = (
 SQL_OP_TYPES = {'exact': '=', 'not': '!=','gt':'>','gte':'>=','lt':'<','lte':'<='}
 
 
-
+    
 class Entity(models.Model):
     name = models.CharField(max_length=30, unique=True)
+    folder_path = models.CharField(max_length=1024)
     # child = models.ForeignKey('self',on_delete=models.DO_NOTHING,null=True)
 
     def __str__(self):
         return self.name
     
 
+class Project(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+    description = models.TextField()
+    entity = models.ForeignKey(
+        Entity, on_delete=models.CASCADE, null=True, related_name='entities')
+    # child = models.ForeignKey('self',on_delete=models.DO_NOTHING,null=True)
+
+    def __str__(self):
+        return self.name
+    
 class FunctionMeta(models.Model):
     name = models.CharField(max_length=30)
     type = models.CharField(

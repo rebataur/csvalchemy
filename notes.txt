@@ -36,3 +36,19 @@ psql -h localhost -U postgres -p 5433 -l
 
 
 multipass launch --name evadb --cpus 4 --disk 20G --memory 8G --network name=Wi-Fi
+
+# PL/JAVA
+
+sudo apt-get update && sudo apt-get install -y openjdk-17-jdk libkrb5-dev
+sudo update-alternative --config java
+
+wget https://github.com/tada/pljava/archive/refs/tags/V1_6_5.tar.gz
+tar -xf V1_6_5.tar.gz
+cd pljava-1_6_5
+mvn clean install
+java -jar pljava-packaging/target/pljava-pg15.jar
+
+psql
+SET pljava.libjvm_location TO '/usr/lib/jvm/java-1.17.0-openjdk-amd64/lib/server/libjvm.so';
+ALTER SYSTEM SET pljava.libjvm_location TO '/usr/lib/jvm/java-1.17.0-openjdk-amd64/lib/server/libjvm.so';
+create extension pljava;

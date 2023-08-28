@@ -101,9 +101,11 @@
 
     {% endif %}
 
-    <h4>Upload Data</h4>
+    <h4>Upload File or Entire Folder</h4>
     {% if entity %}
-
+    <div class="col-6 alert alert-primary" role="alert">
+        Delta Files are uploaded before every call to entity
+      </div>
 
 
     <form action="{% url 'rapidiamapp:dataingestion' action='uploaddata' id=entity.id%}" method="POST" class="post-form"
@@ -113,6 +115,7 @@
         <input type="submit" />
     </form>
     {% endif %}
+
 
     <h4>Children</h4>
     {% for field in fields %}

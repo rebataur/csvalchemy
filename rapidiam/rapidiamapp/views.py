@@ -32,7 +32,10 @@ engine = create_engine(f"postgresql+psycopg2://{PG_USER}:{PG_PWD}@{PG_HOST}/{PG_
 # sql = "with cte_0 as ( select scripname, market, outlook, growwportfolio_file_name, pe, code, low, close, last, prevclose, no_trades, no_of_shrs, sc_name, net_turnov, sc_group, sc_type, tdcloindi, bhavcopy_file_name, sc_code, open, high from growwportfolio left join bhavcopy on growwportfolio.code = bhavcopy.sc_code ), cte_1 as ( select *, convert_str_to_date(bhavcopy_file_name) as trade_date from cte_0), cte_2 as ( select *, avg(close) over(partition by code order by trade_date asc rows between 200 preceding and current row) as sma200, rsi_sma(close) over(partition by code order by trade_date asc rows between 14 preceding and current row) as rsi_sma_14 from cte_1) , cte_3 as ( select *, RANK() OVER (PARTITION BY code ORDER BY trade_date desc) AS rnk from cte_2 ) select distinct * from cte_3 where outlook = 'LONGTERM' and close < sma200 and rsi_sma_14 < 30 and pe < 22 order by trade_date desc"
 # sql = "with cte_0 as ( select low,close,last,prevclose,no_trades,no_of_shrs,sc_name,net_turnov,sc_group,sc_type,tdcloindi,bhavcopy_file_name,sc_code,open,high from bhavcopy) select * from cte_0"
 
-
+def upload_folder(folder_path):
+    print("uploading folder")
+    sql = f"insert into {entity.name} {sql_cols} values({field_sql})"
+    execute_raw_query(sql)
 def index(request):
     # cur = conn.cursor()
     # cur.execute(sql)
@@ -58,6 +61,8 @@ def dataingestion(request, action, id):
         form = UploadFileForm()
         dataupload_form = UploadFileDataForm()
         entities_excluded = Entity.objects.exclude(id=id).all()
+
+
         return render(request, "rapidiamapp/dataingestion.html", context={'entities': entities,'form': form, 'entity': entity, 'entities': entities, 'fields': fields, 'dtypes': DATA_TYPES, 'dataupload_form': dataupload_form,'functions_calculated_meta':functions_calculated_meta,'entities_excluded':entities_excluded})
     # if not GET, then proceed
     if action == 'create':
@@ -156,11 +161,19 @@ def dataingestion(request, action, id):
         execute_raw_query(f"drop table if exists {entity.name}")
         execute_raw_query(sql)
     if action == 'uploaddata':
+        entity = Entity.objects.get(id=id)
         try:
             csv_files = request.FILES.getlist('csv_file')
+            folder_path = request.POST.get('folder_path')
+            if folder_path:
+                entity.folder_path = folder_path
+                entity.save()
+                upload_folder(folder_path)
+                return HttpResponseRedirect(f'dataingestion/display/{entity.id}')
+
             print(csv_files)
 
-            entity = Entity.objects.get(id=id)
+          
             fields = Field.objects.filter(entity__id=id)
 
             for csv_file in csv_files:

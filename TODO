@@ -1,4 +1,4 @@
-1. Field name is unique, but in CTE it should be table_name.column_name in "as" selection - Fixed
+1. [FIXED] Field name is unique, but in CTE it should be table_name.column_name in "as" selection - Fixed
 2. Visualizatin selection from https://datavizproject.com/, integrate holoviews
 3. Generate SQL using OpenAI https://medium.com/dataherald/how-to-langchain-sqlchain-c7342dd41614
 https://medium.com/dataherald/how-to-connect-llm-to-sql-database-with-langchain-sqlagent-48635fddaa74
