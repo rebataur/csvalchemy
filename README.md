@@ -12,7 +12,7 @@
   <h3 align="center">CSV Alchemy</h3>
 
   <p align="center">
-       A transformative and magical tool for turning raw CSV data into valuable insights 
+       A transformative and magical tool for turning raw CSV data into valuable insights with AI/ML and Visualization
     <br />
     <a href="https://github.com/rebataur/rapidiam"><strong>Explore the docs »</strong></a>
     <br />
