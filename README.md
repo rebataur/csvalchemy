@@ -12,7 +12,7 @@
   <h3 align="center">CSV Alchemy</h3>
 
   <p align="center">
-  A Powerful Personal Productivity Apps building tool.
+       A transformative and magical tool for turning raw CSV data into valuable insights 
     <br />
     <a href="https://github.com/rebataur/rapidiam"><strong>Explore the docs »</strong></a>
     <br />
