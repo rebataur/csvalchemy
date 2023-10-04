@@ -11,9 +11,9 @@
 
   <h3 align="center">CSV Alchemy</h3>
 
-  <p align="center">
-       
+  <p align="center">       
     CSVAlchemy is a powerful data transformation and analysis tool that seamlessly converts raw CSV data into valuable insights, enabling you to uncover hidden patterns, cleanse your datasets, and create visualizations effortlessly.
+  </p>
     <br />
     <a href="https://github.com/rebataur/rapidiam"><strong>Explore the docs »</strong></a>
     <br />
