@@ -14,7 +14,7 @@
   <p align="center">       
  Quickly build AI/ML Data Apps to get insights and alerts to improve sales and services.
   </p>
-  <p>Inject, join, transform, and enrich structured data, perform AI/ML, setup alerts, and profit.</p>p
+  <p>Quickly Inject, join, transform, and enrich structured data, perform AI/ML, setup alerts, and profit.</p>
     <br />
     <a href="https://github.com/rebataur/rapidiam"><strong>Explore the docs »</strong></a>
     <br />
