@@ -12,8 +12,9 @@
   <h3 align="center">Rapidiam</h3>
 
   <p align="center">       
-    CSVAlchemy is a powerful data transformation and analysis tool that seamlessly converts raw CSV data into valuable insights, enabling you to uncover hidden patterns, cleanse your datasets, and create visualizations effortlessly.
+ Rapidly build Small Data Apps with AI/ML for Productivity. 
   </p>
+  <p>Inject, join, transform, and enrich structured data, perform AI/ML, setup alerts, and profit.</p>p
     <br />
     <a href="https://github.com/rebataur/rapidiam"><strong>Explore the docs »</strong></a>
     <br />
