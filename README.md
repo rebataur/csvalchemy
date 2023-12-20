@@ -12,7 +12,7 @@
   <h3 align="center">Rapidiam</h3>
 
   <p align="center">       
- Rapidly build Small Data Apps with AI/ML for Productivity. 
+ Rapidly build Small Data Apps with AI/ML for Productivity on PostgreSQL.
   </p>
   <p>Inject, join, transform, and enrich structured data, perform AI/ML, setup alerts, and profit.</p>p
     <br />
