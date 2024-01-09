@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponseRedirect, reverse, HttpResponse
 from django.contrib import messages
 from .forms import UploadFileForm, UploadFileDataForm, DerivedColumnForm,UploadFunctionForm
-import pandas as pd
+# import pandas as pd
 import pygwalker as pyg
 from io import StringIO
 import logging
@@ -9,11 +9,25 @@ from .models import Entity, Field, DATA_TYPES, SQL_OP_TYPES, FUNCTION_TYPES,Func
 from django.db import connection
 from django.conf import settings
 import psycopg2
-from sqlalchemy import create_engine
 from django.contrib import messages
 import traceback
 from django.core import serializers
 import json
+import os    
+from chardet import detect
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
+# get file encoding type
+
+
+# from sqlalchemy import create_engine, text as sql_text
+
+import ray
+ray.shutdown()
+# ray.init()
+import modin.pandas as pd
+from modin.db_conn import ModinDatabaseConnection
 
 
 logger = logging.getLogger(__name__)
@@ -26,16 +40,33 @@ PG_HOST = settings.DATABASES['default']['HOST']
 PG_PORT  = settings.DATABASES['default']['PORT']
 
 
-conn = psycopg2.connect(dbname=PG_NAME, user=PG_USER, password=PG_PWD,host=PG_HOST,port=PG_PORT)
-engine = create_engine(f"postgresql+psycopg2://{PG_USER}:{PG_PWD}@{PG_HOST}/{PG_NAME}")
+# conn = psycopg2.connect(dbname=PG_NAME, user=PG_USER, password=PG_PWD,host=PG_HOST,port=PG_PORT)
+# engine = create_engine(f"postgresql+psycopg2://{PG_USER}:{PG_PWD}@{PG_HOST}/{PG_NAME}")
+# engine = create_engine(f"postgresql+psycopg2://{PG_USER}:{PG_PWD}@{PG_HOST}/{PG_NAME}")
+
+
+mod_con = ModinDatabaseConnection(
+    'psycopg2',
+    host=PG_HOST,
+    dbname=PG_NAME,
+    user=PG_USER,
+    password=PG_PWD)
 
 # sql = "with cte_0 as ( select scripname, market, outlook, growwportfolio_file_name, pe, code, low, close, last, prevclose, no_trades, no_of_shrs, sc_name, net_turnov, sc_group, sc_type, tdcloindi, bhavcopy_file_name, sc_code, open, high from growwportfolio left join bhavcopy on growwportfolio.code = bhavcopy.sc_code ), cte_1 as ( select *, convert_str_to_date(bhavcopy_file_name) as trade_date from cte_0), cte_2 as ( select *, avg(close) over(partition by code order by trade_date asc rows between 200 preceding and current row) as sma200, rsi_sma(close) over(partition by code order by trade_date asc rows between 14 preceding and current row) as rsi_sma_14 from cte_1) , cte_3 as ( select *, RANK() OVER (PARTITION BY code ORDER BY trade_date desc) AS rnk from cte_2 ) select distinct * from cte_3 where outlook = 'LONGTERM' and close < sma200 and rsi_sma_14 < 30 and pe < 22 order by trade_date desc"
 # sql = "with cte_0 as ( select low,close,last,prevclose,no_trades,no_of_shrs,sc_name,net_turnov,sc_group,sc_type,tdcloindi,bhavcopy_file_name,sc_code,open,high from bhavcopy) select * from cte_0"
+
+# get file encoding type
+def get_encoding_type(file):
+    with open(file, 'rb') as f:
+        rawdata = f.read()
+    return detect(rawdata)['encoding']
+
 
 def upload_folder(folder_path):
     print("uploading folder")
     sql = f"insert into {entity.name} {sql_cols} values({field_sql})"
     execute_raw_query(sql)
+
 def index(request):
     # cur = conn.cursor()
     # cur.execute(sql)
@@ -66,34 +97,63 @@ def dataingestion(request, action, id):
         return render(request, "rapidiamapp/dataingestion.html", context={'entities': entities,'form': form, 'entity': entity, 'entities': entities, 'fields': fields, 'dtypes': DATA_TYPES, 'dataupload_form': dataupload_form,'functions_calculated_meta':functions_calculated_meta,'entities_excluded':entities_excluded})
     # if not GET, then proceed
     if action == 'create':
-        try:
-            name = request.POST['name'].lower()
-            csv_file = request.FILES["csv_file"]
-
-            file_data = csv_file.read().decode("utf-8")
-           
-            cols = StringIO(file_data).readlines()[0].split(',')
-      
-            if id == 0:
-                Entity.objects.filter(name=name).delete()
-            entity = Entity.objects.create(name=name)
-            entity.save()
-            for col in cols:
-                name = col.replace('.', '').replace(
-                    '-', '_').replace("'", "").replace('"', '').replace(' ', '_').lower()
-                Field.objects.create(
-                    actual_name=col, name=f'{entity}_{name}', entity=entity).save()
-            # create an additinal file_name columnf
+        # try:
+        name = request.POST['name'].lower()
+        csv_file = request.FILES["csv_file"]
+        # first write the file
+        # with open('source_file.csv', 'wb') as f:
+        #     f.write(csv_file)
+        path = default_storage.save('source_file.csv', ContentFile(csv_file.read()))
+        source_file = os.path.join(settings.MEDIA_ROOT, path)
+        from_codec = None
+        with open(source_file,'rb') as f:
+            rawdata = f.read()
+            from_codec = detect(rawdata)['encoding']
+        
+        file_data = None
+        if from_codec != 'utf-8':
+        # add try: except block for reliability
+            
+            with open(source_file, 'r', encoding=from_codec) as f, open(f'target_file.csv', 'w', encoding='utf-8') as e:
+                text = f.read() # for small files, for big use chunks
+                e.write(text)
+            
+            # os.remove(source_file) # remove old encoding file
+            # os.rename(trgfile, csv_file) # rename new encoding
+            with open(f'target_file.csv', 'rb') as f:
+                file_data = f.read().decode("utf-8")
+        else:      
+            with open(source_file, 'rb') as f:
+                file_data = f.read().decode("utf-8")
+        os.remove(source_file)
+        
+        # file_data = csv_file.read().decode("utf-8")
+        
+        cols = StringIO(file_data).readlines()[0].split(',')
+    
+        if id == 0:
+            Entity.objects.filter(name=name).delete()
+        entity = Entity.objects.create(name=name)
+        entity.save()
+        for col in cols:
+            name = col.replace('.', '').replace(
+                '-', '_').replace("'", "").replace('"', '').replace(' ', '_').lower()
             Field.objects.create(
-                actual_name=f'{entity.name}_file_name',
-                name=f'{entity.name}_file_name', entity=entity).save()
-            return HttpResponseRedirect(f'/dataingestion/display/{entity.id}')
+                actual_name=col, name=f'{entity}_{name}', entity=entity).save()
+        # create an additinal file_name columnf
+        Field.objects.create(
+            actual_name=f'{entity.name}_file_name',
+            name=f'{entity.name}_file_name', entity=entity).save()
+        
+
+        
+        return HttpResponseRedirect(f'/dataingestion/display/{entity.id}')
         # return HttpResponseRedirect(reverse("rapidiamapp:create_entity"))
 
-        except Exception as e:
-            logging.getLogger("error_logger").error(
-                "Unable to upload file. "+repr(e))
-            messages.error(request, "Unable to upload file. "+repr(e))
+        # except Exception as e:
+        #     logging.getLogger("error_logger").error(
+        #         "Unable to upload file. "+repr(e))
+        #     messages.error(request, "Unable to upload file. "+repr(e))
     
     if action == 'edit':
         if 'submit_action_delete' in request.POST:
@@ -171,7 +231,7 @@ def dataingestion(request, action, id):
                 upload_folder(folder_path)
                 return HttpResponseRedirect(f'dataingestion/display/{entity.id}')
 
-            print(csv_files)
+            # print(csv_files)
 
           
             fields = Field.objects.filter(entity__id=id)
@@ -854,7 +914,17 @@ def dataviz(request, action, id):
             print("=========VISUALIZE SQL ==========================")
             print(full_data_sql)
             # full_data_sql = full_data_sql +  " where trade_date = '2023-05-09'"
-            df = pd.read_sql(full_data_sql, engine)
+            # df = pd.read_sql(full_data_sql, engine)
+            # df = pd.read_sql_query(con=engine.connect(), 
+            #                       sql=sql_text(full_data_sql))
+            df = pd.read_sql(full_data_sql,
+                mod_con,
+                index_col=None,
+                coerce_float=True,
+                params=None,
+                parse_dates=None,
+                chunksize=None)
+                        
 
             eda  = pyg.walk(df,hiddenDataSourceConfig=True, vegaTheme='vega',return_html=True)
         return render(request, "rapidiamapp/dataviz.html",
@@ -1446,35 +1516,35 @@ def get_table_columns(tname):
         cols.append({"name": col[0], 'type': col[1]})
     return cols
 
-import threading
-import time
+# import threading
+# import time
 
-import schedule
+# import schedule
 
 
-def run_continuously(interval=1):
-    """Continuously run, while executing pending jobs at each
-    elapsed time interval.
-    @return cease_continuous_run: threading. Event which can
-    be set to cease continuous run. Please note that it is
-    *intended behavior that run_continuously() does not run
-    missed jobs*. For example, if you've registered a job that
-    should run every minute and you set a continuous run
-    interval of one hour then your job won't be run 60 times
-    at each interval but only once.
-    """
-    cease_continuous_run = threading.Event()
+# def run_continuously(interval=1):
+#     """Continuously run, while executing pending jobs at each
+#     elapsed time interval.
+#     @return cease_continuous_run: threading. Event which can
+#     be set to cease continuous run. Please note that it is
+#     *intended behavior that run_continuously() does not run
+#     missed jobs*. For example, if you've registered a job that
+#     should run every minute and you set a continuous run
+#     interval of one hour then your job won't be run 60 times
+#     at each interval but only once.
+#     """
+#     cease_continuous_run = threading.Event()
 
-    class ScheduleThread(threading.Thread):
-        @classmethod
-        def run(cls):
-            while not cease_continuous_run.is_set():
-                schedule.run_pending()
-                time.sleep(interval)
+#     class ScheduleThread(threading.Thread):
+#         @classmethod
+#         def run(cls):
+#             while not cease_continuous_run.is_set():
+#                 schedule.run_pending()
+#                 time.sleep(interval)
 
-    continuous_thread = ScheduleThread()
-    continuous_thread.start()
-    return cease_continuous_run
+#     continuous_thread = ScheduleThread()
+#     continuous_thread.start()
+#     return cease_continuous_run
 
 from datetime import datetime,timezone
 import requests
@@ -1483,6 +1553,7 @@ from django.utils import timezone
 
 def background_job():
     print('Hello from the background thread')
+    print("==================================================================")
     jobs = ScheduleJob.objects.all()
     for job in jobs:
         if job.last_run:
@@ -1507,7 +1578,7 @@ def background_job():
         
 
 
-schedule.every().minute.do(background_job)
+# schedule.every().minute.do(background_job)
 
 # Start the background thread
 # stop_run_continuously = run_continuously()
@@ -1527,3 +1598,18 @@ def callback_url(request):
         received_json_data=json.loads(request.body)
         print(received_json_data)
         return HttpResponse('ok')
+    
+
+from apscheduler.schedulers.background import BackgroundScheduler
+
+
+scheduler = BackgroundScheduler()
+
+
+
+job = scheduler.add_job(background_job, 'interval', seconds=5)
+# job.remove()
+
+
+# sched.configure(options_from_ini_file)
+# scheduler.start()

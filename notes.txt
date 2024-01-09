@@ -1,19 +1,38 @@
-sudo apt-get install wget ca-certificates
-
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+
+#sudo apt-get install wget ca-certificates
+
+#wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+#sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
 sudo apt-get update
 
-sudo apt-get install -y postgresql-client-15 postgresql-common postgresql-15 postgresql-contrib  postgresql-server-dev-15
 
 
-sudo bash -c 'echo "host    all             all             0.0.0.0/0            trust" >> /etc/postgresql/15/main/pg_hba.conf'
+sudo apt-get install -y postgresql-client-16 postgresql-common postgresql-16 postgresql-contrib  postgresql-server-dev-16  postgresql-plpython3-16
+
+
 
 
 # Listen on all ip addresses
-sudo bash -c 'echo "listen_addresses = '\''*'\''" >> /etc/postgresql/15/main/postgresql.conf'
+sudo bash -c 'echo "host    all             all             0.0.0.0/0            trust" >> /etc/postgresql/16/main/pg_hba.conf'
+sudo bash -c 'echo "listen_addresses = '\''*'\''" >> /etc/postgresql/16/main/postgresql.conf'
+sudo systemctl restart postgresql
+
+
+# MAdlib deps DOESN"T WORK
+
+sudo apt-get install -y gcc g++ m4 patch cmake pgxn
+mkdir build 
+cd build 
+cmake .. 
+make -j8 # if this causes issues, switch back to a plan `make`
+sudo make install 
+
+./madpack -s madlib –p postgres install
+./madpack -s madlib -p postgres -c postgres/postgres@localhost:5432/postgres install
 
 
 # Rlang
@@ -35,7 +54,7 @@ docker run --name "pgplr" -p 5433:5433 -d -t -e ALLOW_IP_RANGE="0.0.0.0/0" -e IP
 psql -h localhost -U postgres -p 5433 -l
 
 
-multipass launch --name evadb --cpus 4 --disk 20G --memory 8G --network name=Wi-Fi
+multipass launch --name vm --cpus 4 --disk 20G --memory 8G --network name=Wi-Fi
 
 # PL/JAVA
 
@@ -52,3 +71,10 @@ psql
 SET pljava.libjvm_location TO '/usr/lib/jvm/java-1.17.0-openjdk-amd64/lib/server/libjvm.so';
 ALTER SYSTEM SET pljava.libjvm_location TO '/usr/lib/jvm/java-1.17.0-openjdk-amd64/lib/server/libjvm.so';
 create extension pljava;
+
+
+
+
+
+
+https://gist.github.com/joelonsql/e5aa27f8cc9bd22b8999b7de8aee9d47#procedural-languages
