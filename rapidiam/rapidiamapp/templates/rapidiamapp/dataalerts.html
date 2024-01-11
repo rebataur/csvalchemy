@@ -93,7 +93,8 @@
     <button type="submit" class="btn btn-success">Schedule</button>
 </form>
 
-<table id="datatable" class="table table-striped" style="width:100%">
+<div class="table-wrapper" style=" overflow: auto">
+    <table id="datatable" class="table table-striped display compact">
             <thead>
 
                 <tr>                    
@@ -113,7 +114,8 @@
                 </tr>
                 {% endfor %}
             </tbody>
-        </table>
+</table>
+</div>
     {% endif %}
 
 
