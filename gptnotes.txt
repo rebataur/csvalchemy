@@ -1,3 +1,4 @@
 sudo apt-get install -y libopenblas-dev pkg-config
 
 CMAKE_ARGS="-DLLAMA_OPENBLAS=on" FORCE_CMAKE=1 pip install llama-cpp-python --no-cache-dir
+
