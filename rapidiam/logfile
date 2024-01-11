@@ -12371,3 +12371,63 @@ no data was returned by command ""C:/Users/pranjan24/Downloads/postgresql-14.6-1
 ^C2024-01-09 23:16:10.277 IST [18036] LOG:  database system was interrupted; last known up at 2024-01-09 23:13:17 IST
 2024-01-09 23:16:10.611 IST [18036] LOG:  database system was not properly shut down; automatic recovery in progress
 2024-01-09 23:16:10.616 IST [18036] LOG:  redo starts at 2/94DFE118
+2024-01-09 23:53:38.134 IST [19336] LOG:  starting PostgreSQL 14.6, compiled by Visual C++ build 1914, 64-bit
+2024-01-09 23:53:38.144 IST [19336] LOG:  listening on IPv6 address "::1", port 5432
+2024-01-09 23:53:38.151 IST [19336] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2024-01-09 23:53:38.208 IST [11484] LOG:  database system was interrupted while in recovery at 2024-01-09 23:16:10 IST
+2024-01-09 23:53:38.208 IST [11484] HINT:  This probably means that some data is corrupted and you will have to use the last backup for recovery.
+2024-01-09 23:53:38.615 IST [11484] LOG:  database system was not properly shut down; automatic recovery in progress
+2024-01-09 23:53:38.620 IST [11484] LOG:  redo starts at 2/94DFE118
+2024-01-09 23:53:38.620 IST [11484] LOG:  invalid record length at 2/94DFE200: wanted 24, got 0
+2024-01-09 23:53:38.620 IST [11484] LOG:  redo done at 2/94DFE1C8 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2024-01-09 23:53:38.715 IST [19336] LOG:  database system is ready to accept connections
+2024-01-09 23:55:20.499 IST [6952] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:56:02.690 IST [15452] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:56:10.519 IST [19256] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:57:29.437 IST [20296] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:57:37.371 IST [23532] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:58:28.068 IST [20440] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:58:39.309 IST [20632] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-09 23:59:05.295 IST [15520] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-10 00:00:07.994 IST [22604] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-10 00:01:15.194 IST [9684] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-10 00:03:23.544 IST [19508] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-10 00:03:33.723 IST [19596] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2024-01-10 01:17:20.273 IST [19336] LOG:  server process (PID 14880) was terminated by exception 0xC000013A
+2024-01-10 01:17:20.273 IST [19336] DETAIL:  Failed process was running: SELECT "django_migrations"."id", "django_migrations"."app", "django_migrations"."name", "django_migrations"."applied" FROM "django_migrations"
+2024-01-10 01:17:20.273 IST [19336] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2024-01-10 01:17:20.274 IST [19336] LOG:  terminating any other active server processes
+2024-01-10 01:17:20.302 IST [19336] LOG:  all server processes terminated; reinitializing
+2024-01-10 01:17:20.350 IST [19336] LOG:  startup process (PID 17588) was terminated by exception 0xC000013A
+2024-01-10 01:17:20.350 IST [19336] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2024-01-10 01:17:20.351 IST [19336] LOG:  aborting startup due to startup process failure
+2024-01-10 01:17:20.354 IST [19336] LOG:  database system is shut down
+2024-01-11 13:11:15.326 IST [15540] LOG:  starting PostgreSQL 14.6, compiled by Visual C++ build 1914, 64-bit
+2024-01-11 13:11:15.337 IST [15540] LOG:  listening on IPv6 address "::1", port 5432
+2024-01-11 13:11:15.344 IST [15540] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2024-01-11 13:11:15.401 IST [17220] LOG:  database system was interrupted; last known up at 2024-01-10 01:13:48 IST
+2024-01-11 13:11:16.046 IST [17220] LOG:  database system was not properly shut down; automatic recovery in progress
+2024-01-11 13:11:16.052 IST [17220] LOG:  redo starts at 2/959F0768
+2024-01-11 13:11:16.075 IST [17220] LOG:  invalid record length at 2/95A72838: wanted 24, got 0
+2024-01-11 13:11:16.076 IST [17220] LOG:  redo done at 2/95A72800 system usage: CPU: user: 0.00 s, system: 0.03 s, elapsed: 0.02 s
+2024-01-11 13:11:16.256 IST [15540] LOG:  database system is ready to accept connections
+2024-01-11 13:35:16.730 IST [15540] LOG:  server process (PID 23600) was terminated by exception 0xC0000142
+2024-01-11 13:35:16.730 IST [15540] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2024-01-11 13:35:16.730 IST [15540] LOG:  terminating any other active server processes
+2024-01-11 13:35:16.749 IST [15540] LOG:  all server processes terminated; reinitializing
+2024-01-11 13:35:16.768 IST [15540] LOG:  startup process (PID 11428) was terminated by exception 0xC0000142
+2024-01-11 13:35:16.768 IST [15540] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2024-01-11 13:35:16.768 IST [15540] LOG:  aborting startup due to startup process failure
+2024-01-11 13:35:16.770 IST [15540] LOG:  database system is shut down

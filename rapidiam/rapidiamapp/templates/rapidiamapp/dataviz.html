@@ -93,7 +93,8 @@
             </form>
 
 
-            <table id="datatable" class="table table-striped" >
+            <div class="table-wrapper" style=" overflow: auto">
+                <table id="datatable" class="table table-striped display compact">
             <thead>
 
                 <tr>
@@ -113,6 +114,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% endif %}
 
 
